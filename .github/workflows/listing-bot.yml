@@ -1,12 +1,14 @@
 name: listing-bot
 
 on:
+  push:                # هر بار کامیت روی main هم اجرا میشه
+    branches: [ "main" ]
   schedule:
-    - cron: "*/5 * * * *"   # هر 5 دقیقه (بر پایه UTC)
+    - cron: "*/5 * * * *"   # هر 5 دقیقه (UTC)
   workflow_dispatch: {}      # اجرای دستی از تب Actions
 
 permissions:
-  contents: write   # برای commit کردن seen.json در همان ریپو
+  contents: write   # برای commit کردن seen.json
 
 jobs:
   run:
@@ -15,6 +17,7 @@ jobs:
     concurrency:
       group: listing-bot
       cancel-in-progress: false
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -29,11 +32,20 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Test Telegram   # 👈 مرحله تست
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -d chat_id="${TELEGRAM_CHAT_ID}" \
+            -d text="✅ GitHub Actions is connected and working!"
+
       - name: Run bot
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          RECENT_HOURS: "1"   # اگر می‌خوای سخت‌گیرتر باشه، مثلاً "2"
+          RECENT_HOURS: "6"
         run: |
           python bot.py
 
