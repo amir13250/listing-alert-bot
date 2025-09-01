@@ -33,7 +33,7 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          RECENT_HOURS: "6"   # اگر می‌خوای سخت‌گیرتر باشه، مثلاً "2"
+          RECENT_HOURS: "1"   # اگر می‌خوای سخت‌گیرتر باشه، مثلاً "2"
         run: |
           python bot.py
 
