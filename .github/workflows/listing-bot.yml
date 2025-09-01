@@ -1,7 +1,7 @@
 name: listing-bot
 
 on:
-  push:                # هر بار کامیت روی main هم اجرا میشه
+  push:                # با هر کامیت روی main اجرا شود
     branches: [ "main" ]
   schedule:
     - cron: "*/5 * * * *"   # هر 5 دقیقه (UTC)
@@ -32,20 +32,27 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Test Telegram   # 👈 مرحله تست
+      # --- مرحله تست تلگرام (دیباگ) ---
+      - name: Test Telegram (debug)
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
-          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+          echo "→ Calling getMe:"
+          curl -s "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getMe" | sed -E 's/.{120}/&\n/g'
+          echo ""
+          echo "→ Sending test message:"
+          RESP=$(curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
             -d chat_id="${TELEGRAM_CHAT_ID}" \
-            -d text="✅ GitHub Actions is connected and working!"
+            -d text="✅ GitHub Actions is connected and working!")
+          echo "Telegram API response:"
+          echo "$RESP" | sed -E 's/.{120}/&\n/g'
 
       - name: Run bot
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          RECENT_HOURS: "6"
+          RECENT_HOURS: "6"   # بازه حساسیت به اعلان‌های جدید (ساعت)
         run: |
           python bot.py
 
