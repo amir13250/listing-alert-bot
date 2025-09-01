@@ -1,14 +1,14 @@
 name: listing-bot
 
 on:
-  push:                # با هر کامیت روی main اجرا شود
+  push:
     branches: [ "main" ]
   schedule:
-    - cron: "*/5 * * * *"   # هر 5 دقیقه (UTC)
-  workflow_dispatch: {}      # اجرای دستی از تب Actions
+    - cron: "*/5 * * * *"
+  workflow_dispatch: {}
 
 permissions:
-  contents: write   # برای commit کردن seen.json
+  contents: write
 
 jobs:
   run:
@@ -32,7 +32,16 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # --- مرحله تست تلگرام (دیباگ) ---
+      - name: Check secrets presence
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          echo "LEN(TOKEN) = ${#TELEGRAM_BOT_TOKEN}"
+          echo "LEN(CHAT_ID) = ${#TELEGRAM_CHAT_ID}"
+          if [ -z "$TELEGRAM_BOT_TOKEN" ]; then echo "❌ TOKEN is EMPTY"; exit 1; else echo "✅ TOKEN present"; fi
+          if [ -z "$TELEGRAM_CHAT_ID" ]; then echo "❌ CHAT_ID is EMPTY"; exit 1; else echo "✅ CHAT_ID present"; fi
+
       - name: Test Telegram (debug)
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -52,7 +61,7 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          RECENT_HOURS: "6"   # بازه حساسیت به اعلان‌های جدید (ساعت)
+          RECENT_HOURS: "6"
         run: |
           python bot.py
 
