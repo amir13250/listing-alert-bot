@@ -32,6 +32,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      # ——— دیباگ Secret ها (غیر مسدودکننده) ———
       - name: Check secrets presence
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -39,23 +40,25 @@ jobs:
         run: |
           echo "LEN(TOKEN) = ${#TELEGRAM_BOT_TOKEN}"
           echo "LEN(CHAT_ID) = ${#TELEGRAM_CHAT_ID}"
-          if [ -z "$TELEGRAM_BOT_TOKEN" ]; then echo "❌ TOKEN is EMPTY"; exit 1; else echo "✅ TOKEN present"; fi
-          if [ -z "$TELEGRAM_CHAT_ID" ]; then echo "❌ CHAT_ID is EMPTY"; exit 1; else echo "✅ CHAT_ID present"; fi
+          if [ -z "$TELEGRAM_BOT_TOKEN" ]; then echo "⚠️ TOKEN is EMPTY"; fi
+          if [ -z "$TELEGRAM_CHAT_ID" ]; then echo "⚠️ CHAT_ID is EMPTY"; fi
+        continue-on-error: true
 
+      # ——— تست تلگرام (غیر مسدودکننده) ———
       - name: Test Telegram (debug)
+        if: ${{ secrets.TELEGRAM_BOT_TOKEN != '' && secrets.TELEGRAM_CHAT_ID != '' }}
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
           echo "→ Calling getMe:"
-          curl -s "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getMe" | sed -E 's/.{120}/&\n/g'
+          curl -s "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getMe" || true
           echo ""
           echo "→ Sending test message:"
-          RESP=$(curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
             -d chat_id="${TELEGRAM_CHAT_ID}" \
-            -d text="✅ GitHub Actions is connected and working!")
-          echo "Telegram API response:"
-          echo "$RESP" | sed -E 's/.{120}/&\n/g'
+            -d text="✅ GitHub Actions is connected and working!" || true
+        continue-on-error: true
 
       - name: Run bot
         env:
